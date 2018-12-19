@@ -109,13 +109,13 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
    {
       if (desPos[i] > curPos[i])
       {
-         digitalWrite(motPins[i][0], actDir[i]);
-         quePos[i] = scalarLength[i] * (desPos[i] - curPos[i]);
+         digitalWrite(motDir[i], posDir[i]);
+         quePos[i] = lenScale[i] * (desPos[i] - curPos[i]);
       }
       else
       {
-         digitalWrite(motPins[i][0], !actDir[i]);
-         quePos[i] = scalarLength[i] * (curPos[i] - desPos[i]);
+         digitalWrite(motDir[i], !posDir[i]);
+         quePos[i] = lenScale[i] * (curPos[i] - desPos[i]);
       }
       curPos[i] = desPos[i];
    }
@@ -137,18 +137,18 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
    {
       if (delta > 0)
       {
-         digitalWrite(motPins[small][1], HIGH);
+         digitalWrite(motStep[small], HIGH);
          delta -= 2 * quePos[large];
       }
 
       delta += 2 * quePos[small];
       
-      digitalWrite(motPins[large][1], HIGH);
+      digitalWrite(motStep[large], HIGH);
 
-      delayMicroseconds(stepDelay);
-      digitalWrite(motPins[0][1], LOW);
-      digitalWrite(motPins[1][1], LOW);
-      delayMicroseconds(stepDelay);
+      delayMicroseconds(50);
+      digitalWrite(motStep[0], LOW);
+      digitalWrite(motStep[1], LOW);
+      delayMicroseconds(50);
    }
 }
 
