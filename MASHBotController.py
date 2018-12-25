@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # By TheMas3212
+# the pyserial is needed
 import serial
 import string
 import time
