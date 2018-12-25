@@ -2,14 +2,14 @@
 
 // PARAMETERS - Calibrations
 const bool DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
-int termDelay = 15; // Stepper Motor Start/Stop Terminals Delay
-int transDelay = 1; // Stepper Motor Lowest Transmission Delay
-float maxAccel = 5; // Acceleration of rampDelay to Fastest State
+int termDelay = 50; // Stepper Motor Start/Stop Terminals Delay
+int transDelay = 10; // Stepper Motor Lowest Transmission Delay
+float maxAccel = 1; // Acceleration of rampDelay to Fastest State
 // unsigned int lenScale[] = {51, 34}; // Steps per Pixel (X, Y)
-unsigned int lenScale[] = {230, 230}; // Steps per Pixel (X, Y)
-unsigned int endLoc[] = {0, 192}; // Endstop Locations (X, Y)
+unsigned int lenScale[] = {200, 200}; // Steps per Pixel (X, Y)
+unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
-bool posDir[] = {LOW, HIGH}; // Direction to +Axis Movement (X, Y)
+bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
 byte zBounds[] = {100, 90}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
@@ -17,11 +17,13 @@ byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 byte enPin = 8; // Stepper Enable, OUTPUT
 byte motDir[] = {5, 6}; // Stepper Directional Pins, OUTPUT (X, Y)
 byte motStep[] = {2, 3}; // Stepper Stepping Pins, OUTPUT (X, Y)
+byte xMirDir = 7; // X Mirror Stepper Direction Pin
+byte xMirStep = 4; // X Mirror Stepper Stepping Pin
 byte endPins[] = {9, 10}; // Axis Endstop Pins, INPUT (X, Y)
-byte zPin = 4; // Z Servo Motor, OUTPUT
-byte pPin = 7; // Power Servo Motor, OUTPUT
-Servo zServ; // Z-axis Servo Object, OUTPUT
-Servo powServ; // Power Servo Object, OUTPUT
+//byte zPin = ; // Z Servo Motor, OUTPUT
+//byte pPin = ; // Power Servo Motor, OUTPUT
+//Servo zServ; // Z-axis Servo Object, OUTPUT
+//Servo powServ; // Power Servo Object, OUTPUT
 
 // PARAMETERS - Global Variables
 unsigned int curPos[] = {0, 0}; // Current Axis Pixel Position (X, Y)
@@ -37,28 +39,31 @@ void _INT_Pins()
     pinMode(endPins[i], INPUT); // Pin Map Axis Endstops
     digitalWrite(endPins[i], HIGH); // Pullup Resistor for Endstops
   }
+  pinMode(xMirDir, OUTPUT); // Pin Map X Mirror Direction Pin
+  pinMode(xMirStep, OUTPUT); // Pin Map X Mirror Stepping Pin
   pinMode(enPin, OUTPUT); // Pin Map Enable Pin
   digitalWrite(enPin, HIGH); // Disable Enable (Re-enabled After Sync)
-  zServ.attach(zPin); // Pin Map Z-Axis Servo
-  powServ.attach(pPin); // Pin Map Power Servo
+//  zServ.attach(zPin); // Pin Map Z-Axis Servo
+//  powServ.attach(pPin); // Pin Map Power Servo
 }
 
 // INITIALIZATION - Axis Homing
 void _INT_Homing()
 {
-  zServ.write(zBounds[LOW]); // Reset Z Axis Servo to OFF
-  powServ.write(powBounds[LOW]); // Reset Power Servo to OFF
+//  zServ.write(zBounds[LOW]); // Reset Z Axis Servo to OFF
+//  powServ.write(powBounds[LOW]); // Reset Power Servo to OFF
 
-  digitalWrite(enPin, LOW); // Enable Stepper Motors
+  digitalWrite(enPin, LOW); // Enable Stepper Motor
+  
   for (int i = 0; i < 2; i++)
   {
-    digitalWrite(motDir[i], homeDir[i]); // Set Axis Direction to Home Direction
+    digitalDir(motDir[i], homeDir[i]); // Set Axis Direction to Home Direction
     while (digitalRead(endPins[i])) // Home until endstop reached
     {
-      digitalWrite(motStep[i], HIGH);
-      delayMicroseconds(transDelay);
-      digitalWrite(motStep[i], LOW);
-      delayMicroseconds(transDelay);
+      digitalStep(motStep[i], HIGH);
+      delayMicroseconds(termDelay);
+      digitalStep(motStep[i], LOW);
+      delayMicroseconds(termDelay);
     }
     curPos[i] = endLoc[i]; // Set Current Location to Endstop Location
   }
@@ -68,10 +73,28 @@ void _INT_Homing()
 // FUNCTIONS - Toggle DS Power
 void PowerToggle()
 {
-  powServ.write(powBounds[HIGH]); // Power Pushed: ON
+//  powServ.write(powBounds[HIGH]); // Power Pushed: ON
   delay(250);
-  powServ.write(powBounds[LOW]); // Power Released: OFF
+//  powServ.write(powBounds[LOW]); // Power Released: OFF
   delay(250);
+}
+
+void digitalStep(byte motAxis, bool motValue)
+{
+  digitalWrite(motAxis, motValue);
+  if (motAxis == motStep[0])
+  {
+    digitalWrite(xMirStep, motValue);
+  }
+}
+
+void digitalDir(byte motAxis, bool motValue)
+{
+  digitalWrite(motAxis, motValue);
+  if (motAxis == motDir[0])
+  {
+    digitalWrite(xMirDir, motValue);
+  }
 }
 
 // FUNCTIONS - Stepper Motor Delay Ramping
@@ -109,12 +132,12 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
    {
       if (desPos[i] > curPos[i])
       {
-         digitalWrite(motDir[i], posDir[i]);
+         digitalDir(motDir[i], posDir[i]);
          quePos[i] = lenScale[i] * (desPos[i] - curPos[i]);
       }
       else
       {
-         digitalWrite(motDir[i], !posDir[i]);
+         digitalDir(motDir[i], !posDir[i]);
          quePos[i] = lenScale[i] * (curPos[i] - desPos[i]);
       }
       curPos[i] = desPos[i];
@@ -137,17 +160,17 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
    {
       if (delta > 0)
       {
-         digitalWrite(motStep[small], HIGH);
+         digitalStep(motStep[small], HIGH);
          delta -= 2 * quePos[large];
       }
 
       delta += 2 * quePos[small];
       
-      digitalWrite(motStep[large], HIGH);
+      digitalStep(motStep[large], HIGH);
 
       delayMicroseconds(50);
-      digitalWrite(motStep[0], LOW);
-      digitalWrite(motStep[1], LOW);
+      digitalStep(motStep[0], LOW);
+      digitalStep(motStep[1], LOW);
       delayMicroseconds(50);
    }
 }
@@ -160,13 +183,13 @@ void moveCoordinates(byte x, byte y, byte z)
     stepperMovement(x, y); // Move Axis to Specified Location (X, Y)
     if (zPrev != z)
     {
-      zServ.write(zBounds[HIGH]); // Z Axis Pushed: ON
+//      zServ.write(zBounds[HIGH]); // Z Axis Pushed: ON
       zPrev = z; // Save Z State for Next Loop Iteration
       delay(100);
     }
   } else if (zPrev != z)
   {
-    zServ.write(zBounds[LOW]); // Z Axis Pushed: ON
+//    zServ.write(zBounds[LOW]); // Z Axis Pushed: ON
     zPrev = z; // Save Z State for Next Loop Iteration
     delay(100);
   }
@@ -177,6 +200,10 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
+//  digitalWrite(enPin, LOW); // Power ON Motors
+//  moveCoordinates(255, 192, 0);
+//  moveCoordinates(0, 0, 0);
+//  digitalWrite(enPin, HIGH); // Power ON Motors
 }
 
 void loop()
