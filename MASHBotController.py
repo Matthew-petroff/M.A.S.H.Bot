@@ -6,6 +6,8 @@ import string
 import time
 import sys
 import struct
+import cmd
+import readline
 import os.path, os
 from serial import SerialException
 
@@ -41,6 +43,7 @@ inputStruct = struct.Struct('sBBBBBBs') # (0xfc X X Y Y Z Z 0xfa)
 
 def processTASFile(file):
     # fullPath = os.path.join(pathToFiles, file)
+    # print('Processing: {}'.format(file))
     fullPath = file
     buffer = []
     with open(fullPath, 'r') as f:
@@ -167,8 +170,8 @@ def playFullRun(bot):
 
 def playLevel(bot, level):
     level_data = levels[level]
-    start_buffer = level_data['start']
-    end_buffer = level_data['end']
+    start_buffer = level_data['start'][3]
+    end_buffer = level_data['end'][3]
     polls = level_data['polls']
     bot.sendBuffer((start_buffer, 'Starting Level: {}'.format(level)))
     for poll in polls:
@@ -187,6 +190,132 @@ def playLevel(bot, level):
 # playLevel(dbot, 'v5/Level1-8')
 # playFullRun(dbot)
 
+class CommandLine(cmd.Cmd):
+    def __init__(self):
+        cmd.Cmd.__init__(self)
+        self.bot = None
+        self.setprompt()
+        self.intro = "\nMASHBot command-line interface\nType 'help' for a list of commands.\n"
+
+    def complete(self, text, state):
+        if state == 0:
+            origline = readline.get_line_buffer()
+            line = origline.lstrip()
+            stripped = len(origline) - len(line)
+            begidx = readline.get_begidx() - stripped
+            endidx = readline.get_endidx() - stripped
+            compfunc = self.custom_comp_func
+            self.completion_matches = compfunc(text, line, begidx, endidx)
+        try:
+            return self.completion_matches[state]
+        except IndexError:
+            return None
+
+    def custom_comp_func(self, text, line, begidx, endidx):
+        # return self.completenames(text, line, begidx, endidx) + self.completedefault(text, line, begidx, endidx)
+        return self.completenames(text, line, begidx, endidx)
+
+    def setRobot(self, robot):
+        self.bot = robot
+        self.setprompt()
+
+    def setprompt(self):
+        if self.bot == None:
+            self.prompt = "MASHBot[CONNECTING]> "
+        else:
+            if self.bot.online:
+                self.prompt = "MASHBot[ONLINE]> "
+            else:
+                self.prompt = "MASHBot[OFFLINE]> "
+
+    def postcmd(self, stop, line):
+        self.setprompt()
+        return stop
+
+    def emptyline(self):
+        return False
+
+    def do_exit(self, data):
+        '''Quit'''
+        if self.bot.online:
+            self.bot.deInitPower()
+        print('Shutting Down!')
+        return True
+
+    def do_initPower(self, data):
+        '''Init power on the arduino'''
+        if not self.bot.online:
+            self.bot.initPower()
+        else:
+            print('Power Already On')
+
+    def do_deInitPower(self, data):
+        '''Deinit power on the arduino'''
+        if self.bot.online:
+            self.bot.deInitPower()
+        else:
+            print('Power Already Off')
+
+    def do_startGame(self, data):
+        '''Start game and goto level select'''
+        if self.bot.online:
+            try:
+                startGame(self.bot)
+            except KeyboardInterrupt:
+                pass
+        else:
+            print('Power Offline')
+
+    def do_showCredits(self, data):
+        '''Goto credits from level select'''
+        if self.bot.online:
+            try:
+                showCredits(self.bot)
+            except KeyboardInterrupt:
+                pass
+        else:
+            print('Power Offline')
+
+    def do_playFullRun(self, data):
+        '''Do a full run of the game with all levels'''
+        if self.bot.online:
+            try:
+                playFullRun(self.bot)
+            except KeyboardInterrupt:
+                pass
+        else:
+            print('Power Offline')
+
+    def do_listLevels(self, data):
+        '''List all levels loaded'''
+        print('=== LEVELS ===')
+        for level in level_list:
+            print(level)
+        print()
+
+    def do_playLevel(self, data):
+        '''Play a single level from the level select screen'''
+        if self.bot.online:
+            if data == '':
+                print('No level selected')
+            elif data not in level_list:
+                print('Could not match level')
+            else:
+                try:
+                    playLevel(self.bot, data)
+                except KeyboardInterrupt:
+                    pass
+                except TypeError:
+                    print(data)
+                    raise
+        else:
+            print('Power Offline')
+
+
+    # def do_EOF(self, line):
+        # """Quit"""
+        # return True
+
 class MASHBot():
     def __init__(self, port, baud, timeout, reset):
         self.ser = None
@@ -194,6 +323,7 @@ class MASHBot():
         self.baud = baud
         self.timeout = timeout
         self.reset = reset
+        self.online = False
 
     def initSerial(self):
         try:
@@ -237,6 +367,7 @@ class MASHBot():
             data = self.recv(1)
             if data == completionFlag: #0xFA
                 print('Arduino Power Init Complete')
+                self.online = True
                 break
             else:
                 time.sleep(delayFrame)
@@ -249,6 +380,7 @@ class MASHBot():
             data = self.recv(1)
             if data == completionFlag: #0xFA
                 print('Arduino Power Shutdown Complete')
+                self.online = False
                 break
             else:
                 time.sleep(delayFrame)
@@ -285,11 +417,16 @@ class MASHBot():
 MBot = MASHBot(serialPort, serialBaud, serialTimeout, serialReset)
 MBot.initSerial()
 time.sleep(delayFrame)
-MBot.initPower()
+
+cli = CommandLine()
+cli.setRobot(MBot)
+cli.cmdloop()
+
+# MBot.initPower()
 # Level List:
 # ['v5/Level1-8', 'v5/Level5-4', 'v5/Level5-9', 'v5/Level6-9', 'v5/Level7-8', 'v5/Level9-4']
 # playLevel(MBot, 'v5/Level1-8')
-playFullRun(MBot)
-MBot.deInitPower()
+# playFullRun(MBot)
+# MBot.deInitPower()
 
 sys.exit(0)
