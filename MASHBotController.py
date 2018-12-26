@@ -181,15 +181,6 @@ def playLevel(bot, level):
         bot.sendBuffer(pollChoice(options))
     bot.sendBuffer((end_buffer, 'Leaving Level: {}'.format(level)))
 
-# class DummyBot():
-    # def sendBuffer(self, pack):
-        # buffer, name = pack
-        # print('Sending buffer: {}'.format(name))
-
-# dbot = DummyBot()
-# playLevel(dbot, 'v5/Level1-8')
-# playFullRun(dbot)
-
 class CommandLine(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
@@ -212,7 +203,6 @@ class CommandLine(cmd.Cmd):
             return None
 
     def custom_comp_func(self, text, line, begidx, endidx):
-        # return self.completenames(text, line, begidx, endidx) + self.completedefault(text, line, begidx, endidx)
         return self.completenames(text, line, begidx, endidx)
 
     def setRobot(self, robot):
@@ -243,14 +233,14 @@ class CommandLine(cmd.Cmd):
         return True
 
     def do_initPower(self, data):
-        '''Init power on the arduino'''
+        '''Init main loop on the arduino'''
         if not self.bot.online:
             self.bot.initPower()
         else:
             print('Power Already On')
 
     def do_deInitPower(self, data):
-        '''Deinit power on the arduino'''
+        '''Deinit main loop on the arduino'''
         if self.bot.online:
             self.bot.deInitPower()
         else:
@@ -311,10 +301,19 @@ class CommandLine(cmd.Cmd):
         else:
             print('Power Offline')
 
-
-    # def do_EOF(self, line):
-        # """Quit"""
-        # return True
+    def help_usage(self):
+        print('========================= Usage =========================')
+        print('initPower        Start Arduio Main Loop                  ')
+        print('deInitPower      Stop Arduio Main Loop                   ')
+        print('                                                         ')
+        print('listLevels       List all Levels that have been loaded   ')
+        print('exit             Quit                                    ')
+        print('                                                         ')
+        print('startGame        Run first TAS file to start game        ')
+        print('showCredits      Run last TAS file to go to the credits  ')
+        print('playLevel <>     Play the selected level                 ')
+        print('playFullRun      Do a full run of the TAS files          ')
+        print('=========================================================')
 
 class MASHBot():
     def __init__(self, port, baud, timeout, reset):
@@ -421,12 +420,5 @@ time.sleep(delayFrame)
 cli = CommandLine()
 cli.setRobot(MBot)
 cli.cmdloop()
-
-# MBot.initPower()
-# Level List:
-# ['v5/Level1-8', 'v5/Level5-4', 'v5/Level5-9', 'v5/Level6-9', 'v5/Level7-8', 'v5/Level9-4']
-# playLevel(MBot, 'v5/Level1-8')
-# playFullRun(MBot)
-# MBot.deInitPower()
 
 sys.exit(0)
