@@ -273,7 +273,8 @@ void moveCoordinates(byte x, byte y, byte z)
 {
   if (z == 1)
   {
-    stepperMovement(x, y); // Move Axis to Specified Location (X, Y)
+    _OLD_stepperMovement(x, y); // DEBUG MOVEMENT
+//    stepperMovement(x, y); // Move Axis to Specified Location (X, Y)
     if (zPrev != z)
     {
       //      zServ.write(zBounds[HIGH]); // Z Axis Pushed: ON
@@ -293,7 +294,7 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-  _DEBUG_Movement();
+//  _DEBUG_Movement();
 }
 
 void loop()
