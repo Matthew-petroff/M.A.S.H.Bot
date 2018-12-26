@@ -77,22 +77,88 @@ void _DEBUG_Movement()
   delay(100);
   for (int i = 0; i < 3; i++)
   {
-    stepperMovement(255, 192);
+    _OLD_stepperMovement(255, 192);
     delay(100);
-    stepperMovement(120, 100);
+    _OLD_stepperMovement(120, 100);
     delay(100);
-    stepperMovement(255, 192);
+    _OLD_stepperMovement(255, 192);
     delay(100);
-    stepperMovement(0, 0);
+    _OLD_stepperMovement(0, 0);
     delay(100);
-    stepperMovement(120, 100);
+    _OLD_stepperMovement(120, 100);
     delay(100);
-    stepperMovement(0, 0);
+    _OLD_stepperMovement(0, 0);
     delay(100);
-    stepperMovement(255, 192);
+    _OLD_stepperMovement(255, 192);
     delay(100);
   }
   digitalWrite(enPin, HIGH); // Power ON Motors
+}
+
+// FUNCTIONS - Stepper Movement Controller
+void _OLD_stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
+{
+  unsigned int desPos[] = {xDesPos, yDesPos};
+  unsigned int quePos[] = {0, 0};
+  bool primMotor;
+  unsigned int secMove = 0;
+  float ratio;
+  float subPixel = 0;
+
+  for (int i = 0; i < 2; i++)
+  {
+    if (desPos[i] > curPos[i]) // Check If Positive Axis Movement
+    {
+      digitalDir(motDir[i], posDir[i]); // Set Positive Stepper Direction
+      quePos[i] = lenScale[i] * (desPos[i] - curPos[i]); // Transform Coordinate into Steps
+    }
+    else // Check If Negative Axis Movement
+    {
+      digitalDir(motDir[i], !posDir[i]); // Set Negative Stepper Direction
+      quePos[i] = lenScale[i] * (curPos[i] - desPos[i]); // Transform Coordinate into Steps
+    }
+    curPos[i] = desPos[i]; // Set Destination as Current Position
+  }
+
+  if (quePos[0] == 0 && quePos[1] != 0) // Check if Only X is Zero
+  {
+    primMotor = 1; // Set Y as Main Motor
+    ratio = 0; // No Ratio Needed
+  }
+  else if (quePos[1] == 0 && quePos[0] != 0) // Check if Only Y is Zero
+  {
+    primMotor = 0; // Set X as Main Motor
+    ratio = 0; // No Ratio Needed
+  }
+  else if (quePos[0] < quePos[1]) // Check if Y-Axis Steps is Greater than X-Axis Steps
+  {
+    primMotor = 1; // Set Y as Main Motor
+    ratio = ((float)quePos[0] / (float)quePos[1]); // Calculate Ratio Needed For Diagonal
+  }
+  else // Check if X-Axis Steps is Greater than Y-Axis Steps
+  {
+    primMotor = 0; // Set X as Main Motor
+    ratio = ((float)quePos[1] / (float)quePos[0]); // Calculate Ratio Needed For Diagonal
+  }
+
+  for (int i = 0; i < quePos[primMotor]; i++)
+  {
+    subPixel += ratio; // Add Ratio to Current SubPixel Accumulator
+    if (subPixel > 1) // Check if Step is Valid
+    {
+      digitalStep(motStep[!primMotor], HIGH); // Step Secondary Motor
+      subPixel--; // Wait for Next Valid Step
+      secMove++; // Increase Secondary Total Successful Step Count
+    }
+    digitalStep(motStep[primMotor], HIGH); // Step Primary Motor
+
+    //rampDelay(i, quePos[primMotor]);
+    delayMicroseconds(10);
+    digitalStep(motStep[0], LOW);
+    digitalStep(motStep[1], LOW);
+    //rampDelay(i, quePos[primMotor]);
+    delayMicroseconds(10);
+  }
 }
 
 // FUNCTIONS - Toggle DS Power
