@@ -7,9 +7,17 @@ import time
 import sys
 import struct
 import cmd
-import readline
 import os.path, os
+import platform
 from serial import SerialException
+
+if platform.system() == 'Linux':
+    import readline
+elif platform.system() == 'Windows':
+    from pyreadline import Readline as readline
+else:
+    print('Cant determine OS, or is OSX')
+    raise
 
 DEBUG = True
 
