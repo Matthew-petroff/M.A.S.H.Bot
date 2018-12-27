@@ -74,7 +74,7 @@ def processGCode(file):
     buffer = []
     with open(file, 'r') as f:
         firstline = None
-        x,y,z = 0,0,0
+        x,y,z = 0,0,1
         for line in f.readlines():
             line = line.rstrip()
             if firstline == None:
