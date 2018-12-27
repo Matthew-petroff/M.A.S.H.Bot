@@ -10,7 +10,7 @@ unsigned int lenScale[] = {185, 185}; // Steps per Pixel (X, Y)
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
 bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
-byte zBounds[] = {100, 90}; // Z Axis Servo Boundaries (OFF, ON)
+byte zBounds[] = {87, 80}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
 // PARAMETERS - Pinouts
@@ -165,9 +165,9 @@ void _OLD_stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
 void PowerToggle()
 {
   powServ.write(powBounds[HIGH]); // Power Pushed: ON
-  delay(250);
+  delay(500);
   powServ.write(powBounds[LOW]); // Power Released: OFF
-  delay(250);
+  delay(100);
 }
 
 // FUNCTIONS - Toggle Axis Step
