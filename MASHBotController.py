@@ -347,7 +347,7 @@ class CommandLine(cmd.Cmd):
     def do_writeSig(self, data):
         '''Write TASBot's Signature'''
         if self.bot.online:
-            self.bot.sendBuffer(sig_buffer, 'TASBot\'s Signature')
+            self.bot.sendBuffer((sig_buffer, 'TASBot\'s Signature'))
         else:
             print('Power Offline')
 
