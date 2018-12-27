@@ -46,6 +46,7 @@ frameDelay = 1/60 # Time Per Frame
 # Script will look in this path for input data
 level_path = 'v5'
 sigfile = 'sig.gcode'
+musicfile = 'music.gcode'
 
 inputStruct = struct.Struct('sBBBBBBs') # (0xfc X X Y Y Z Z 0xfa)
 # inputStruct = struct.Struct('sBBBs') # (0xfc X Y Z 0xfa)
@@ -82,7 +83,7 @@ def processGCode(file):
                     print('GCode file is not in Absolute Mode. {}'.format(file))
                     return False
             Op = line.split(' ', maxsplit=2)
-            if Op[0] == 'G0':
+            if int(Op[0][1:]) == 0:
                 if Op[1][0] == 'Z':
                     z = clamp(int(Op[1][1:]), 0, 255)
                     if z == 0:
@@ -91,7 +92,7 @@ def processGCode(file):
                         z = 0
                     frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
                     buffer.append(frame)
-            if Op[0] == 'G1':
+            if int(Op[0][1:]) == 1:
                 if Op[1][0] == 'X' and Op[2][0] == 'Y':
                     x = clamp(int(Op[1][1:]), 0, 255)
                     y = clamp(int(Op[2][1:]), 0, 192)
@@ -171,6 +172,7 @@ def processLevel(level_root):
 # Process input data
 readLevels(level_path)
 sig_buffer = processGCode(sigfile)
+music_buffer = processGCode(musicfile)
 
 if serialPort == None:
     try:
@@ -351,6 +353,13 @@ class CommandLine(cmd.Cmd):
         else:
             print('Power Offline')
 
+    def do_playMusic(self, data):
+        '''Play Music'''
+        if self.bot.online:
+            self.bot.sendBuffer((music_buffer, 'Playing Music'))
+        else:
+            print('Power Offline')
+
     def help_usage(self):
         print("========================= Usage =========================")
         print("initPower        Start Arduio Main Loop                  ")
@@ -365,6 +374,7 @@ class CommandLine(cmd.Cmd):
         print("playFullRun      Do a full run of the TAS files          ")
         print("                                                         ")
         print("writeSig         Write TASBot's Signature                ")
+        print("playMusic        Play Music                              ")
         print("=========================================================")
 
 class MASHBot():
