@@ -75,22 +75,22 @@ void _DEBUG_Movement()
 {
   digitalWrite(enPin, LOW); // Power ON Motors
   delay(100);
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 1; i++)
   {
-    _OLD_stepperMovement(255, 192);
-    delay(100);
-    _OLD_stepperMovement(120, 100);
-    delay(100);
-    _OLD_stepperMovement(255, 192);
-    delay(100);
-    _OLD_stepperMovement(0, 0);
-    delay(100);
-    _OLD_stepperMovement(120, 100);
-    delay(100);
-    _OLD_stepperMovement(0, 0);
-    delay(100);
-    _OLD_stepperMovement(255, 192);
-    delay(100);
+    //    stepperMovement(255, 192);
+    //    delay(10000);
+    //    stepperMovement(120, 100);
+    //    delay(10000);
+    stepperMovement(255, 192);
+    delay(5000);
+    stepperMovement(0, 0);
+    delay(5000);
+    //    stepperMovement(120, 100);
+    //    delay(10000);
+    //    stepperMovement(0, 0);
+    //    delay(10000);
+    //    stepperMovement(255, 192);
+    //    delay(10000);
   }
   digitalWrite(enPin, HIGH); // Power ON Motors
 }
@@ -216,8 +216,8 @@ void rampDelay(unsigned int currentPosition, unsigned int maxPosition)
 // FUNCTIONS - Stepper Movement Controller
 void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
 {
-  unsigned int desPos[] = { xDesPos, yDesPos };
-  unsigned int quePos[] = { 0, 0 };
+  long unsigned int desPos[] = { xDesPos, yDesPos };
+  long unsigned int quePos[] = { 0, 0 };
   unsigned int small, large;
   int delta = 0;
 
@@ -247,25 +247,27 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
     large = 0;
   }
 
-  delta = (2 * quePos[small]) - quePos[large];
+   unsigned int qSmall = quePos[small] / lenScale[small]; // max would be 192
+   unsigned int qLarge = quePos[large] / lenScale[large]; // max would be 255
 
-  for (int i = 0; i < quePos[large]; i++)
-  {
-    if (delta > 0)
-    {
-      digitalStep(motStep[small], HIGH);
-      delta -= 2 * quePos[large];
-    }
+   delta = (2 * qSmall) - qLarge;
+   for (int i = 0; i < quePos[large]; i++)
+   {
+      if (delta > 0)
+      {
+         digitalStep(motStep[small], HIGH);
+         delta -= 2 * qLarge;
+      }
 
-    delta += 2 * quePos[small];
+      delta += 2 * qSmall;
 
-    digitalStep(motStep[large], HIGH);
+      digitalStep(motStep[large], HIGH);
 
-    delayMicroseconds(termDelay);
-    digitalStep(motStep[0], LOW);
-    digitalStep(motStep[1], LOW);
-    delayMicroseconds(termDelay);
-  }
+      delayMicroseconds(1);
+      digitalStep(motStep[0], LOW);
+      digitalStep(motStep[1], LOW);
+      delayMicroseconds(1);
+   }
 }
 
 // FUNCTIONS - Move DS Stylus
@@ -294,7 +296,7 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-  //  _DEBUG_Movement();
+  _DEBUG_Movement();
 }
 
 void loop()
