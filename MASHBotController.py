@@ -45,10 +45,14 @@ frameDelay = 1/60 # Time Per Frame
 
 # Script will look in this path for input data
 level_path = 'v5'
+sigfile = 'sig.gcode'
 
 inputStruct = struct.Struct('sBBBBBBs') # (0xfc X X Y Y Z Z 0xfa)
 # inputStruct = struct.Struct('sBBBs') # (0xfc X Y Z 0xfa)
 
+def clamp(x, mini, maxi):
+    return max(mini, min(x, maxi))
+    
 def processTASFile(file):
     # fullPath = os.path.join(pathToFiles, file)
     # print('Processing: {}'.format(file))
@@ -63,6 +67,36 @@ def processTASFile(file):
             frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
             # frame = inputStruct.pack(stylesFlag, x, y, z, completionFlag)
             buffer.append(frame)
+    return buffer
+
+def processGCode(file):
+    buffer = []
+    with open(file, 'r') as f:
+        firstline = None
+        x,y,z = 0,0,0
+        for line in f.readlines():
+            line = line.rstrip()
+            if firstline == None:
+                firstline = line
+                if firstline != 'G90':
+                    print('GCode file is not in Absolute Mode. {}'.format(file))
+                    return False
+            Op = line.split(' ', maxsplit=2)
+            if Op[0] == 'G0':
+                if Op[1][0] == 'Z':
+                    z = clamp(int(Op[1][1:]), 0, 255)
+                    if z == 0:
+                        z = 1
+                    else:
+                        z = 0
+                    frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
+                    buffer.append(frame)
+            if Op[0] == 'G1':
+                if Op[1][0] == 'X' and Op[2][0] == 'Y':
+                    x = clamp(int(Op[1][1:]), 0, 255)
+                    y = clamp(int(Op[2][1:]), 0, 192)
+                    frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
+                    buffer.append(frame)
     return buffer
 
 def readLevels(root):
@@ -136,6 +170,7 @@ def processLevel(level_root):
 
 # Process input data
 readLevels(level_path)
+sig_buffer = processGCode(sigfile)
 
 if serialPort == None:
     try:
@@ -309,19 +344,28 @@ class CommandLine(cmd.Cmd):
         else:
             print('Power Offline')
 
+    def do_writeSig(self, data):
+        '''Write TASBot's Signature'''
+        if self.bot.online:
+            self.bot.sendBuffer(sig_buffer, 'TASBot\'s Signature')
+        else:
+            print('Power Offline')
+
     def help_usage(self):
-        print('========================= Usage =========================')
-        print('initPower        Start Arduio Main Loop                  ')
-        print('deInitPower      Stop Arduio Main Loop                   ')
-        print('                                                         ')
-        print('listLevels       List all Levels that have been loaded   ')
-        print('exit             Quit                                    ')
-        print('                                                         ')
-        print('startGame        Run first TAS file to start game        ')
-        print('showCredits      Run last TAS file to go to the credits  ')
-        print('playLevel <>     Play the selected level                 ')
-        print('playFullRun      Do a full run of the TAS files          ')
-        print('=========================================================')
+        print("========================= Usage =========================")
+        print("initPower        Start Arduio Main Loop                  ")
+        print("deInitPower      Stop Arduio Main Loop                   ")
+        print("                                                         ")
+        print("listLevels       List all Levels that have been loaded   ")
+        print("exit             Quit                                    ")
+        print("                                                         ")
+        print("startGame        Run first TAS file to start game        ")
+        print("showCredits      Run last TAS file to go to the credits  ")
+        print("playLevel <>     Play the selected level                 ")
+        print("playFullRun      Do a full run of the TAS files          ")
+        print("                                                         ")
+        print("writeSig         Write TASBot's Signature                ")
+        print("=========================================================")
 
 class MASHBot():
     def __init__(self, port, baud, timeout, reset):
