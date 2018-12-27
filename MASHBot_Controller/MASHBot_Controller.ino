@@ -6,7 +6,7 @@ int termDelay = 100; // Stepper Motor Start/Stop Terminals Delay
 int transDelay = 10; // Stepper Motor Lowest Transmission Delay
 float maxAccel = 1; // Acceleration of rampDelay to Fastest State
 // unsigned int lenScale[] = {51, 34}; // Steps per Pixel (X, Y)
-unsigned int lenScale[] = {200, 200}; // Steps per Pixel (X, Y)
+unsigned int lenScale[] = {185, 185}; // Steps per Pixel (X, Y)
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
 bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
@@ -271,10 +271,10 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
 // FUNCTIONS - Move DS Stylus
 void moveCoordinates(byte x, byte y, byte z)
 {
-  if (z == 1)
+  if (z != 0)
   {
     _OLD_stepperMovement(x, y); // DEBUG MOVEMENT
-//    stepperMovement(x, y); // Move Axis to Specified Location (X, Y)
+    //    stepperMovement(x, y); // Move Axis to Specified Location (X, Y)
     if (zPrev != z)
     {
       //      zServ.write(zBounds[HIGH]); // Z Axis Pushed: ON
@@ -294,7 +294,7 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-//  _DEBUG_Movement();
+  //  _DEBUG_Movement();
 }
 
 void loop()
