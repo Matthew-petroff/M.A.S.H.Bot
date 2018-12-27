@@ -20,10 +20,10 @@ byte motStep[] = {2, 3}; // Stepper Stepping Pins, OUTPUT (X, Y)
 byte xMirDir = 7; // X Mirror Stepper Direction Pin
 byte xMirStep = 4; // X Mirror Stepper Stepping Pin
 byte endPins[] = {9, 10}; // Axis Endstop Pins, INPUT (X, Y)
-//byte zPin = ; // Z Servo Motor, OUTPUT
-//byte pPin = ; // Power Servo Motor, OUTPUT
-//Servo zServ; // Z-axis Servo Object, OUTPUT
-//Servo powServ; // Power Servo Object, OUTPUT
+byte zPin = 12; // Z Servo Motor, OUTPUT
+byte pPin = 13; // Power Servo Motor, OUTPUT
+Servo zServ; // Z-axis Servo Object, OUTPUT
+Servo powServ; // Power Servo Object, OUTPUT
 
 // PARAMETERS - Global Variables
 unsigned int curPos[] = {0, 0}; // Current Axis Pixel Position (X, Y)
@@ -43,15 +43,15 @@ void _INT_Pins()
   pinMode(xMirStep, OUTPUT); // Pin Map X Mirror Stepping Pin
   pinMode(enPin, OUTPUT); // Pin Map Enable Pin
   digitalWrite(enPin, HIGH); // Disable Enable (Re-enabled After Sync)
-  //  zServ.attach(zPin); // Pin Map Z-Axis Servo
-  //  powServ.attach(pPin); // Pin Map Power Servo
+  zServ.attach(zPin); // Pin Map Z-Axis Servo
+  powServ.attach(pPin); // Pin Map Power Servo
 }
 
 // INITIALIZATION - Axis Homing
 void _INT_Homing()
 {
-  //  zServ.write(zBounds[LOW]); // Reset Z Axis Servo to OFF
-  //  powServ.write(powBounds[LOW]); // Reset Power Servo to OFF
+  zServ.write(zBounds[LOW]); // Reset Z Axis Servo to OFF
+  powServ.write(powBounds[LOW]); // Reset Power Servo to OFF
 
   digitalWrite(enPin, LOW); // Enable Stepper Motor
 
@@ -164,9 +164,9 @@ void _OLD_stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
 // FUNCTIONS - Toggle DS Power
 void PowerToggle()
 {
-  //  powServ.write(powBounds[HIGH]); // Power Pushed: ON
+  powServ.write(powBounds[HIGH]); // Power Pushed: ON
   delay(250);
-  //  powServ.write(powBounds[LOW]); // Power Released: OFF
+  powServ.write(powBounds[LOW]); // Power Released: OFF
   delay(250);
 }
 
@@ -277,13 +277,13 @@ void moveCoordinates(byte x, byte y, byte z)
     //    stepperMovement(x, y); // Move Axis to Specified Location (X, Y)
     if (zPrev != z)
     {
-      //      zServ.write(zBounds[HIGH]); // Z Axis Pushed: ON
+      zServ.write(zBounds[HIGH]); // Z Axis Pushed: ON
       zPrev = z; // Save Z State for Next Loop Iteration
       delay(100);
     }
   } else if (zPrev != z)
   {
-    //    zServ.write(zBounds[LOW]); // Z Axis Pushed: ON
+    zServ.write(zBounds[LOW]); // Z Axis Pushed: ON
     zPrev = z; // Save Z State for Next Loop Iteration
     delay(100);
   }
