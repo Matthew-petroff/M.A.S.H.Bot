@@ -63,6 +63,8 @@ def processTASFile(file):
         for line in f.readlines():
             if line[0] != '|':
                 continue
+            if line[0:16] != '|0|.............':
+                print('NON ZERO INPUT DETECTED!')
             x,y,z = line[16:25].split(' ')
             x,y,z = int(x),int(y),int(z)
             frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
