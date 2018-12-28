@@ -1,7 +1,7 @@
 #include <Servo.h>
 
 // PARAMETERS - Calibrations
-#define DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
+const bool DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
 unsigned int lenScale[] = {185, 185}; // Steps per Pixel (X, Y)
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
@@ -282,7 +282,9 @@ void loop()
       }
       else if (infoByte == 0xfe) // Serial Kill Sequence Command
       {
+        delay(100);
         DISABLE; // Power Off Motors
+        delay(100);
         PowerToggle(); // Toggle System Power
         Serial.write(0xfa); // Send completion flag
 
@@ -290,8 +292,9 @@ void loop()
       }
       else if (infoByte == 0xde)
       {
-        startMenu(); // Toggle System Power
         Serial.write(0xde); // Send completion flag
+        startMenu(); // Toggle System Power
+        Serial.write(0xfa); // Send completion flag
       }
     }
   }
