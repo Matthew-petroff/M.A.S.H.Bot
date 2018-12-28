@@ -1,11 +1,12 @@
 #include <Servo.h>
 
 // PARAMETERS - Calibrations
-const bool DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
+#define DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
 unsigned int lenScale[] = {185, 185}; // Steps per Pixel (X, Y)
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
 bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
+byte startBounds[] = {102, 93}; // Start Button Servo Boundaries (OFF, ON)
 byte zBounds[] = {87, 79}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
@@ -28,12 +29,14 @@ byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 #define XEND  0b00000010
 #define YEND  0b00000100
 
+#define SPIN 11 // Z Servo Motor, OUTPUT
 #define ZPIN 12 // Z Servo Motor, OUTPUT
 #define PPIN 13 // Power Servo Motor, OUTPUT
 
 byte motDir[] = {XDIR, YDIR}; // Stepper Directional Pins, OUTPUT (X, Y)
 byte motStep[] = {XSTEP, YSTEP}; // Stepper Stepping Pins, OUTPUT (X, Y)
 
+Servo startServ; // Z-axis Servo Object, OUTPUT
 Servo zServ; // Z-axis Servo Object, OUTPUT
 Servo powServ; // Power Servo Object, OUTPUT
 
@@ -44,6 +47,7 @@ byte zPrev = 0; // Previous Z-Axis Movement
 
 // INITIALIZATION - Axis Homing
 void _INT_Homing(void) {
+  startServ.write(startBounds[LOW]); // Reset Z Axis Servo to OFF
   zServ.write(zBounds[LOW]); // Reset Z Axis Servo to OFF
   powServ.write(powBounds[LOW]); // Reset Power Servo to OFF
 
@@ -69,7 +73,8 @@ void _INT_Pins()
   DDRB &= ~(XEND | YEND);                 // Inputs for end stop switches
   PORTB |= (XEND | YEND);                // Inputs are pulled high
   DISABLE;                               // Steppers will be enabled after sync
-  
+
+  startServ.attach(SPIN); // Pin Map Z-Axis Servo
   zServ.attach(ZPIN); // Pin Map Z-Axis Servo
   powServ.attach(PPIN); // Pin Map Power Servo
 }
@@ -101,24 +106,24 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
   unsigned int small, large;
   int delta = 0;
   byte step_delay = BASE_STEP_DELAY;
-  int ramp = (1<<RAMP_DIV)-1;
+  int ramp = (1 << RAMP_DIV) - 1;
 
   for (int i = 0; i < 2; i++)
   {
-    if(desPos[i] > curPos[i]) {
-        quePos[i] = lenScale[i] * (desPos[i] - curPos[i]);
-        if(posDir[i] == HIGH) {
-            PORTD |= motDir[i];
-        } else {
-            PORTD &= ~(motDir[i]);
-        }
+    if (desPos[i] > curPos[i]) {
+      quePos[i] = lenScale[i] * (desPos[i] - curPos[i]);
+      if (posDir[i] == HIGH) {
+        PORTD |= motDir[i];
+      } else {
+        PORTD &= ~(motDir[i]);
+      }
     } else {
-        quePos[i] = lenScale[i] * (curPos[i] - desPos[i]);
-        if(posDir[i] == LOW) {
-            PORTD |= motDir[i];
-        } else {
-            PORTD &= ~(motDir[i]);
-        }
+      quePos[i] = lenScale[i] * (curPos[i] - desPos[i]);
+      if (posDir[i] == LOW) {
+        PORTD |= motDir[i];
+      } else {
+        PORTD &= ~(motDir[i]);
+      }
     }
     curPos[i] = desPos[i];
   }
@@ -153,9 +158,9 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
     PORTD &= ~(XSTEP | YSTEP);
     delayMicroseconds(step_delay);
     if (i < j) {
-        if ((step_delay > MIN_STEP_DELAY) && ((i & ramp) == ramp)) step_delay--;
-    } else if (j < ((1<<RAMP_DIV)*(BASE_STEP_DELAY-MIN_STEP_DELAY))) {
-        if ((step_delay < BASE_STEP_DELAY) && ((j & ramp) == ramp)) step_delay++;
+      if ((step_delay > MIN_STEP_DELAY) && ((i & ramp) == ramp)) step_delay--;
+    } else if (j < ((1 << RAMP_DIV) * (BASE_STEP_DELAY - MIN_STEP_DELAY))) {
+      if ((step_delay < BASE_STEP_DELAY) && ((j & ramp) == ramp)) step_delay++;
     }
   }
 }
@@ -183,7 +188,10 @@ void moveCoordinates(byte x, byte y, byte z)
 // START MENU
 void startMenu()
 {
-  
+  startServ.write(startBounds[HIGH]); // Power Pushed: ON
+  delay(500);
+  startServ.write(startBounds[LOW]); // Power Released: OFF
+  delay(100);
 }
 
 void setup()
@@ -191,7 +199,7 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-//  _DEBUG_Movement();
+  //  _DEBUG_Movement();
 }
 
 void loop()
