@@ -93,29 +93,6 @@ void PowerToggle()
   delay(100);
 }
 
-// FUNCTIONS - Stepper Motor Delay Ramping
-void rampDelay(unsigned int currentPosition, unsigned int maxPosition)
-{
-  unsigned int modDelay;
-  unsigned int scalarDelay;
-  if (currentPosition < (maxPosition / 2))
-  {
-    scalarDelay = (int)(maxAccel * (float)(currentPosition));
-  } else
-  {
-    scalarDelay = (int)(maxAccel * (float)(maxPosition - currentPosition));
-  }
-
-  if ((termDelay - transDelay) > scalarDelay)
-  {
-    modDelay = termDelay - scalarDelay;
-  } else
-  {
-    modDelay = transDelay;
-  }
-  delayMicroseconds(modDelay);
-}
-
 // FUNCTIONS - Stepper Movement Controller
 void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
 {
@@ -170,9 +147,9 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
     delta += 2 * qSmall;
 
     PORTD |= motStep[large];
-    delayMicroseconds(5);
+    delayMicroseconds(25);
     PORTD &= ~(XSTEP | YSTEP);
-    delayMicroseconds(5);
+    delayMicroseconds(25);
   }
 }
 
@@ -207,7 +184,7 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-  //  _DEBUG_Movement();
+//  _DEBUG_Movement();
 }
 
 void loop()
