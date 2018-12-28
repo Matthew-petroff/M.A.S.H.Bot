@@ -223,7 +223,7 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-  _DEBUG_Movement();
+//  _DEBUG_Movement();
 }
 
 void loop()
