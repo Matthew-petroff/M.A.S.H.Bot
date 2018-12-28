@@ -190,12 +190,18 @@ void moveCoordinates(byte x, byte y, byte z)
   }
 }
 
+// START MENU
+void startMenu()
+{
+  
+}
+
 void setup()
 {
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-//  _DEBUG_Movement();
+  //  _DEBUG_Movement();
 }
 
 void loop()
@@ -283,6 +289,11 @@ void loop()
         Serial.write(0xfa); // Send completion flag
 
         startFlag = false; // Terminate Serial Handshake
+      }
+      else if (infoByte == 0xde)
+      {
+        startMenu(); // Toggle System Power
+        Serial.write(0xde); // Send completion flag
       }
     }
   }
