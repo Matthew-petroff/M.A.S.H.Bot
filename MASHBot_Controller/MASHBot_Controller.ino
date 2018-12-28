@@ -14,20 +14,6 @@ byte zBounds[] = {87, 79}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
 // PARAMETERS - Pinouts
-byte enPin = 8; // Stepper Enable, OUTPUT
-byte motDir[] = {5, 6}; // Stepper Directional Pins, OUTPUT (X, Y)
-byte motStep[] = {2, 3}; // Stepper Stepping Pins, OUTPUT (X, Y)
-byte xMirDir = 7; // X Mirror Stepper Direction Pin
-byte xMirStep = 4; // X Mirror Stepper Stepping Pin
-byte endPins[] = {9, 10}; // Axis Endstop Pins, INPUT (X, Y)
-byte zPin = 12; // Z Servo Motor, OUTPUT
-byte pPin = 13; // Power Servo Motor, OUTPUT
-Servo zServ; // Z-axis Servo Object, OUTPUT
-Servo powServ; // Power Servo Object, OUTPUT
-
-// PARAMETERS - Global Variables
-unsigned int curPos[] = {0, 0}; // Current Axis Pixel Position (X, Y)
-byte zPrev = 0; // Previous Z-Axis Movement
 
 //# PORTD
 #define XSTEP 0b00010100
@@ -41,6 +27,20 @@ byte zPrev = 0; // Previous Z-Axis Movement
 #define DISABLE (PORTB |= ENPIN)
 #define XEND  0b00000010
 #define YEND  0b00000100
+
+#define ZPIN 12 // Z Servo Motor, OUTPUT
+#define PPIN 13 // Power Servo Motor, OUTPUT
+
+byte motDir[] = {XDIR, YDIR}; // Stepper Directional Pins, OUTPUT (X, Y)
+byte motStep[] = {XSTEP, YSTEP}; // Stepper Stepping Pins, OUTPUT (X, Y)
+
+Servo zServ; // Z-axis Servo Object, OUTPUT
+Servo powServ; // Power Servo Object, OUTPUT
+
+// PARAMETERS - Global Variables
+unsigned int curPos[] = {0, 0}; // Current Axis Pixel Position (X, Y)
+byte zPrev = 0; // Previous Z-Axis Movement
+
 
 // INITIALIZATION - Axis Homing
 void _INT_Homing(void) {
@@ -64,29 +64,24 @@ void _INT_Homing(void) {
 // INITIALIZATION - Pinouts
 void _INT_Pins()
 {
-  for (int i = 0; i < 2; i++)
-  {
-    pinMode(motDir[i], OUTPUT); // Pin Map Stepper Motor Axis Direction
-    pinMode(motStep[i], OUTPUT); // Pin Map Stepper Motor Axis Stepping
-    pinMode(endPins[i], INPUT); // Pin Map Axis Endstops
-    digitalWrite(endPins[i], HIGH); // Pullup Resistor for Endstops
-  }
-  pinMode(xMirDir, OUTPUT); // Pin Map X Mirror Direction Pin
-  pinMode(xMirStep, OUTPUT); // Pin Map X Mirror Stepping Pin
-  pinMode(enPin, OUTPUT); // Pin Map Enable Pin
-  digitalWrite(enPin, HIGH); // Disable Enable (Re-enabled After Sync)
-  zServ.attach(zPin); // Pin Map Z-Axis Servo
-  powServ.attach(pPin); // Pin Map Power Servo
+  DDRD |= (XSTEP | YSTEP | XDIR | YDIR); // Output pins for step/direction
+  DDRB |= ENPIN;                         // Output pin for enable
+  DDRB &= (XEND | YEND);                 // Inputs for end stop switches
+  PORTB |= (XEND | YEND);                // Inputs are pulled high
+  DISABLE;                               // Steppers will be enabled after sync
+  
+  zServ.attach(ZPIN); // Pin Map Z-Axis Servo
+  powServ.attach(PPIN); // Pin Map Power Servo
 }
 
 // FUNCTIONS - DEBUG Axis Movement
 void _DEBUG_Movement()
 {
-  digitalWrite(enPin, LOW); // Power ON Motors
+  ENABLE;
   delay(5000);
   stepperMovement(0, 0);
   delay(100);
-  digitalWrite(enPin, HIGH); // Power ON Motors
+  DISABLE;
 }
 
 // FUNCTIONS - Toggle DS Power
@@ -96,26 +91,6 @@ void PowerToggle()
   delay(500);
   powServ.write(powBounds[LOW]); // Power Released: OFF
   delay(100);
-}
-
-// FUNCTIONS - Toggle Axis Step
-void digitalStep(byte motAxis, bool motValue)
-{
-  digitalWrite(motAxis, motValue);
-  if (motAxis == motStep[0])
-  {
-    digitalWrite(xMirStep, motValue);
-  }
-}
-
-// FUNCTIONS - Toggle Axis Direction
-void digitalDir(byte motAxis, bool motValue)
-{
-  digitalWrite(motAxis, motValue);
-  if (motAxis == motDir[0])
-  {
-    digitalWrite(xMirDir, motValue);
-  }
 }
 
 // FUNCTIONS - Stepper Motor Delay Ramping
@@ -151,16 +126,15 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
 
   for (int i = 0; i < 2; i++)
   {
-    if (desPos[i] > curPos[i])
+    if (!(desPos[i] > curPos[i]) == !(posDir[i]) )
     {
-      digitalDir(motDir[i], posDir[i]);
-      quePos[i] = lenScale[i] * (desPos[i] - curPos[i]);
+      PORTD |= motDir[i];
     }
     else
     {
-      digitalDir(motDir[i], !posDir[i]);
-      quePos[i] = lenScale[i] * (curPos[i] - desPos[i]);
+      PORTD &= ~(motDir[i]);
     }
+    quePos[i] = lenScale[i] * abs(curPos[i] - desPos[i]);
     curPos[i] = desPos[i];
   }
 
@@ -183,17 +157,15 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
   {
     if (delta > 0)
     {
-      digitalStep(motStep[small], HIGH);
+      PORTD |= motStep[small];
       delta -= 2 * qLarge;
     }
 
     delta += 2 * qSmall;
 
-    digitalStep(motStep[large], HIGH);
-
+    PORTD |= motStep[large];
     delayMicroseconds(5);
-    digitalStep(motStep[0], LOW);
-    digitalStep(motStep[1], LOW);
+    PORTD &= ~(XSTEP | YSTEP);
     delayMicroseconds(5);
   }
 }
@@ -240,7 +212,7 @@ void loop()
 
       _INT_Homing(); // Home Axis
       delay(1); // Delay for Stepper Inhertia
-      digitalWrite(enPin, LOW); // Power ON Motors
+      ENABLE;
     }
   }
 
@@ -306,7 +278,7 @@ void loop()
       }
       else if (infoByte == 0xfe) // Serial Kill Sequence Command
       {
-        digitalWrite(enPin, HIGH); // Power Off Motors
+        DISABLE; // Power Off Motors
         PowerToggle(); // Toggle System Power
         Serial.write(0xfa); // Send completion flag
 
