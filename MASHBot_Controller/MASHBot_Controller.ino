@@ -138,7 +138,7 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
   unsigned int qLarge = quePos[large] / lenScale[large]; // max would be 255
 
   delta = (2 * qSmall) - qLarge;
-  for (int i = 0; i < quePos[large]; i++)
+  for (int i = 0, j = quePos[large]; j > 0; i++, j--)
   {
     if (delta > 0)
     {
@@ -152,7 +152,11 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
     delayMicroseconds(step_delay);
     PORTD &= ~(XSTEP | YSTEP);
     delayMicroseconds(step_delay);
-    if ((step_delay > MIN_STEP_DELAY) && ((i & ramp) == ramp)) step_delay--;
+    if (i < j) {
+        if ((step_delay > MIN_STEP_DELAY) && ((i & ramp) == ramp)) step_delay--;
+    } else {
+        if ((step_delay < BASE_STEP_DELAY) && ((j & ramp) == ramp)) step_delay++;
+    }
   }
 }
 
