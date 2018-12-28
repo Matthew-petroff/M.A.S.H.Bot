@@ -4,7 +4,6 @@
 const bool DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
 int termDelay = 100; // Stepper Motor Start/Stop Terminals Delay
 int transDelay = 10; // Stepper Motor Lowest Transmission Delay
-float maxAccel = 1; // Acceleration of rampDelay to Fastest State
 // unsigned int lenScale[] = {51, 34}; // Steps per Pixel (X, Y)
 unsigned int lenScale[] = {185, 185}; // Steps per Pixel (X, Y)
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
@@ -12,6 +11,10 @@ bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
 bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
 byte zBounds[] = {87, 79}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
+
+#define BASE_STEP_DELAY 25 // base time between steps (microseconds)
+#define MIN_STEP_DELAY 5   // minimum step delay
+#define RAMP_DIV 2         // reduce step delay by 1 microsecond every 2^n steps
 
 // PARAMETERS - Pinouts
 
@@ -100,6 +103,8 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
   long unsigned int quePos[] = { 0, 0 };
   unsigned int small, large;
   int delta = 0;
+  byte step_delay = BASE_STEP_DELAY;
+  int ramp = (1<<RAMP_DIV)-1;
 
   for (int i = 0; i < 2; i++)
   {
@@ -147,9 +152,10 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
     delta += 2 * qSmall;
 
     PORTD |= motStep[large];
-    delayMicroseconds(25);
+    delayMicroseconds(step_delay);
     PORTD &= ~(XSTEP | YSTEP);
-    delayMicroseconds(25);
+    delayMicroseconds(step_delay);
+    if ((step_delay > MIN_STEP_DELAY) && ((i & ramp) == ramp)) step_delay--;
   }
 }
 
