@@ -10,7 +10,7 @@ unsigned int lenScale[] = {185, 185}; // Steps per Pixel (X, Y)
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
 bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
-byte zBounds[] = {87, 80}; // Z Axis Servo Boundaries (OFF, ON)
+byte zBounds[] = {87, 79}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
 // PARAMETERS - Pinouts
@@ -296,7 +296,7 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-  _DEBUG_Movement();
+//  _DEBUG_Movement();
 }
 
 void loop()
