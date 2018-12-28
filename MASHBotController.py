@@ -65,10 +65,12 @@ def processTASFile(file):
                 continue
             if line[0:16] != '|0|.............':
                 print('NON ZERO INPUT DETECTED!')
-            x,y,z = line[16:25].split(' ')
-            x,y,z = int(x),int(y),int(z)
-            frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
-            # frame = inputStruct.pack(stylesFlag, x, y, z, completionFlag)
+                frame = b'\xde\xad\xbe\xef'
+            else:
+                x,y,z = line[16:25].split(' ')
+                x,y,z = int(x),int(y),int(z)
+                frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
+                # frame = inputStruct.pack(stylesFlag, x, y, z, completionFlag)
             buffer.append(frame)
     return buffer
 
@@ -459,12 +461,13 @@ class MASHBot():
             fcount += 1
             if frame != state:
                 state = frame
+                datalen = len(frame)
                 self.send(frame)
                 time.sleep(frameDelay)
                 got_data = False
                 while True:
                     if not got_data:
-                        data = self.recv(8)
+                        data = self.recv(datalen)
                         got_data = True
                     a = self.recv(1)
                     if a == completionFlag: #0xFA
