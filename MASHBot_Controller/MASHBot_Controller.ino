@@ -66,7 +66,7 @@ void _INT_Pins()
 {
   DDRD |= (XSTEP | YSTEP | XDIR | YDIR); // Output pins for step/direction
   DDRB |= ENPIN;                         // Output pin for enable
-  DDRB &= (XEND | YEND);                 // Inputs for end stop switches
+  DDRB &= ~(XEND | YEND);                 // Inputs for end stop switches
   PORTB |= (XEND | YEND);                // Inputs are pulled high
   DISABLE;                               // Steppers will be enabled after sync
   
