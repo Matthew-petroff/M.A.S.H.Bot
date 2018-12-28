@@ -154,7 +154,7 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
     delayMicroseconds(step_delay);
     if (i < j) {
         if ((step_delay > MIN_STEP_DELAY) && ((i & ramp) == ramp)) step_delay--;
-    } else {
+    } else if (j < ((1<<RAMP_DIV)*(BASE_STEP_DELAY-MIN_STEP_DELAY))) {
         if ((step_delay < BASE_STEP_DELAY) && ((j & ramp) == ramp)) step_delay++;
     }
   }
