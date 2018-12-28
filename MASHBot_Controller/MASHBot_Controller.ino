@@ -29,6 +29,38 @@ Servo powServ; // Power Servo Object, OUTPUT
 unsigned int curPos[] = {0, 0}; // Current Axis Pixel Position (X, Y)
 byte zPrev = 0; // Previous Z-Axis Movement
 
+//# PORTD
+#define XSTEP 0b00010100
+#define XDIR  0b10100000
+#define YSTEP 0b00001000
+#define YDIR  0b01000000
+
+//# PORTB
+#define ENPIN 0b00000001
+#define ENABLE (PORTB &= (~ENPIN))
+#define DISABLE (PORTB |= ENPIN)
+#define XEND  0b00000010
+#define YEND  0b00000100
+
+// INITIALIZATION - Axis Homing
+void _INT_Homing(void) {
+  zServ.write(zBounds[LOW]); // Reset Z Axis Servo to OFF
+  powServ.write(powBounds[LOW]); // Reset Power Servo to OFF
+
+  ENABLE;
+  PORTD |= (XDIR | YDIR);
+  while (PINB & (XEND | YEND)) {
+    if (PINB & XEND) PORTD &= ~XSTEP;
+    if (PINB & YEND) PORTD &= ~YSTEP;
+    delayMicroseconds(termDelay);
+    PORTD |= (XSTEP | YSTEP);
+    delayMicroseconds(termDelay);
+  }
+  curPos[0] = endLoc[0];
+  curPos[1] = endLoc[1];
+  DISABLE;
+}
+
 // INITIALIZATION - Pinouts
 void _INT_Pins()
 {
@@ -47,118 +79,14 @@ void _INT_Pins()
   powServ.attach(pPin); // Pin Map Power Servo
 }
 
-// INITIALIZATION - Axis Homing
-void _INT_Homing()
-{
-  zServ.write(zBounds[LOW]); // Reset Z Axis Servo to OFF
-  powServ.write(powBounds[LOW]); // Reset Power Servo to OFF
-
-  digitalWrite(enPin, LOW); // Enable Stepper Motor
-
-  for (int i = 0; i < 2; i++)
-  {
-    digitalDir(motDir[i], homeDir[i]); // Set Axis Direction to Home Direction
-    while (digitalRead(endPins[i])) // Home until endstop reached
-    {
-      digitalStep(motStep[i], HIGH);
-      delayMicroseconds(termDelay);
-      digitalStep(motStep[i], LOW);
-      delayMicroseconds(termDelay);
-    }
-    curPos[i] = endLoc[i]; // Set Current Location to Endstop Location
-  }
-  digitalWrite(enPin, HIGH); // Disable Stepper Motors
-}
-
 // FUNCTIONS - DEBUG Axis Movement
 void _DEBUG_Movement()
 {
   digitalWrite(enPin, LOW); // Power ON Motors
+  delay(5000);
+  stepperMovement(0, 0);
   delay(100);
-  for (int i = 0; i < 1; i++)
-  {
-    //    stepperMovement(255, 192);
-    //    delay(10000);
-    //    stepperMovement(120, 100);
-    //    delay(10000);
-    stepperMovement(255, 192);
-    delay(5000);
-    stepperMovement(0, 0);
-    delay(5000);
-    //    stepperMovement(120, 100);
-    //    delay(10000);
-    //    stepperMovement(0, 0);
-    //    delay(10000);
-    //    stepperMovement(255, 192);
-    //    delay(10000);
-  }
   digitalWrite(enPin, HIGH); // Power ON Motors
-}
-
-// FUNCTIONS - Stepper Movement Controller
-void _OLD_stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
-{
-  unsigned int desPos[] = {xDesPos, yDesPos};
-  unsigned int quePos[] = {0, 0};
-  bool primMotor;
-  unsigned int secMove = 0;
-  float ratio;
-  float subPixel = 0;
-
-  for (int i = 0; i < 2; i++)
-  {
-    if (desPos[i] > curPos[i]) // Check If Positive Axis Movement
-    {
-      digitalDir(motDir[i], posDir[i]); // Set Positive Stepper Direction
-      quePos[i] = lenScale[i] * (desPos[i] - curPos[i]); // Transform Coordinate into Steps
-    }
-    else // Check If Negative Axis Movement
-    {
-      digitalDir(motDir[i], !posDir[i]); // Set Negative Stepper Direction
-      quePos[i] = lenScale[i] * (curPos[i] - desPos[i]); // Transform Coordinate into Steps
-    }
-    curPos[i] = desPos[i]; // Set Destination as Current Position
-  }
-
-  if (quePos[0] == 0 && quePos[1] != 0) // Check if Only X is Zero
-  {
-    primMotor = 1; // Set Y as Main Motor
-    ratio = 0; // No Ratio Needed
-  }
-  else if (quePos[1] == 0 && quePos[0] != 0) // Check if Only Y is Zero
-  {
-    primMotor = 0; // Set X as Main Motor
-    ratio = 0; // No Ratio Needed
-  }
-  else if (quePos[0] < quePos[1]) // Check if Y-Axis Steps is Greater than X-Axis Steps
-  {
-    primMotor = 1; // Set Y as Main Motor
-    ratio = ((float)quePos[0] / (float)quePos[1]); // Calculate Ratio Needed For Diagonal
-  }
-  else // Check if X-Axis Steps is Greater than Y-Axis Steps
-  {
-    primMotor = 0; // Set X as Main Motor
-    ratio = ((float)quePos[1] / (float)quePos[0]); // Calculate Ratio Needed For Diagonal
-  }
-
-  for (int i = 0; i < quePos[primMotor]; i++)
-  {
-    subPixel += ratio; // Add Ratio to Current SubPixel Accumulator
-    if (subPixel > 1) // Check if Step is Valid
-    {
-      digitalStep(motStep[!primMotor], HIGH); // Step Secondary Motor
-      subPixel--; // Wait for Next Valid Step
-      secMove++; // Increase Secondary Total Successful Step Count
-    }
-    digitalStep(motStep[primMotor], HIGH); // Step Primary Motor
-
-    //rampDelay(i, quePos[primMotor]);
-    delayMicroseconds(10);
-    digitalStep(motStep[0], LOW);
-    digitalStep(motStep[1], LOW);
-    //rampDelay(i, quePos[primMotor]);
-    delayMicroseconds(10);
-  }
 }
 
 // FUNCTIONS - Toggle DS Power
@@ -247,27 +175,27 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
     large = 0;
   }
 
-   unsigned int qSmall = quePos[small] / lenScale[small]; // max would be 192
-   unsigned int qLarge = quePos[large] / lenScale[large]; // max would be 255
+  unsigned int qSmall = quePos[small] / lenScale[small]; // max would be 192
+  unsigned int qLarge = quePos[large] / lenScale[large]; // max would be 255
 
-   delta = (2 * qSmall) - qLarge;
-   for (int i = 0; i < quePos[large]; i++)
-   {
-      if (delta > 0)
-      {
-         digitalStep(motStep[small], HIGH);
-         delta -= 2 * qLarge;
-      }
+  delta = (2 * qSmall) - qLarge;
+  for (int i = 0; i < quePos[large]; i++)
+  {
+    if (delta > 0)
+    {
+      digitalStep(motStep[small], HIGH);
+      delta -= 2 * qLarge;
+    }
 
-      delta += 2 * qSmall;
+    delta += 2 * qSmall;
 
-      digitalStep(motStep[large], HIGH);
+    digitalStep(motStep[large], HIGH);
 
-      delayMicroseconds(1);
-      digitalStep(motStep[0], LOW);
-      digitalStep(motStep[1], LOW);
-      delayMicroseconds(1);
-   }
+    delayMicroseconds(5);
+    digitalStep(motStep[0], LOW);
+    digitalStep(motStep[1], LOW);
+    delayMicroseconds(5);
+  }
 }
 
 // FUNCTIONS - Move DS Stylus
@@ -275,8 +203,7 @@ void moveCoordinates(byte x, byte y, byte z)
 {
   if (z != 0)
   {
-    _OLD_stepperMovement(x, y); // DEBUG MOVEMENT
-    //    stepperMovement(x, y); // Move Axis to Specified Location (X, Y)
+    stepperMovement(x, y); // Move Axis to Specified Location (X, Y)
     if (zPrev != z)
     {
       zServ.write(zBounds[HIGH]); // Z Axis Pushed: ON
@@ -296,7 +223,7 @@ void setup()
   Serial.begin(115200); // Initialize Serial Communications
   _INT_Pins(); // Initialize All Pins
   _INT_Homing(); // Home Axis
-//  _DEBUG_Movement();
+  _DEBUG_Movement();
 }
 
 void loop()
