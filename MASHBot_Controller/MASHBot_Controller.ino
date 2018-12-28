@@ -2,9 +2,6 @@
 
 // PARAMETERS - Calibrations
 const bool DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
-int termDelay = 100; // Stepper Motor Start/Stop Terminals Delay
-int transDelay = 10; // Stepper Motor Lowest Transmission Delay
-// unsigned int lenScale[] = {51, 34}; // Steps per Pixel (X, Y)
 unsigned int lenScale[] = {185, 185}; // Steps per Pixel (X, Y)
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
@@ -13,8 +10,8 @@ byte zBounds[] = {87, 79}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
 #define BASE_STEP_DELAY 25 // base time between steps (microseconds)
-#define MIN_STEP_DELAY 5   // minimum step delay
-#define RAMP_DIV 2         // reduce step delay by 1 microsecond every 2^n steps
+#define MIN_STEP_DELAY 8   // minimum step delay
+#define RAMP_DIV 7         // reduce step delay by 1 microsecond every 2^n steps
 
 // PARAMETERS - Pinouts
 
@@ -55,9 +52,9 @@ void _INT_Homing(void) {
   while (PINB & (XEND | YEND)) {
     if (PINB & XEND) PORTD &= ~XSTEP;
     if (PINB & YEND) PORTD &= ~YSTEP;
-    delayMicroseconds(termDelay);
+    delayMicroseconds(BASE_STEP_DELAY);
     PORTD |= (XSTEP | YSTEP);
-    delayMicroseconds(termDelay);
+    delayMicroseconds(BASE_STEP_DELAY);
   }
   curPos[0] = endLoc[0];
   curPos[1] = endLoc[1];
