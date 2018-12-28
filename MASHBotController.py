@@ -28,6 +28,7 @@ stylesFlag = b'\xfc'
 pollFlag = b'\xf0'
 killFlag = b'\xfe'
 confirmationFlag = b'\xff'
+startbutton = b'\xde'
 
 # Handshake Settings
 waitTime = 2 
@@ -65,7 +66,7 @@ def processTASFile(file):
                 continue
             if line[0:16] != '|0|.............':
                 print('NON ZERO INPUT DETECTED!')
-                frame = b'\xde\xad\xbe\xef'
+                frame = startbutton
             else:
                 x,y,z = line[16:25].split(' ')
                 x,y,z = int(x),int(y),int(z)
