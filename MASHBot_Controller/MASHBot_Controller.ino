@@ -126,15 +126,21 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
 
   for (int i = 0; i < 2; i++)
   {
-    if (!(desPos[i] > curPos[i]) == !(posDir[i]) )
-    {
-      PORTD |= motDir[i];
+    if(desPos[i] > curPos[i]) {
+        quePos[i] = lenScale[i] * (desPos[i] - curPos[i]);
+        if(posDir[i] == HIGH) {
+            PORTD |= motDir[i];
+        } else {
+            PORTD &= ~(motDir[i]);
+        }
+    } else {
+        quePos[i] = lenScale[i] * (curPos[i] - desPos[i]);
+        if(posDir[i] == LOW) {
+            PORTD |= motDir[i];
+        } else {
+            PORTD &= ~(motDir[i]);
+        }
     }
-    else
-    {
-      PORTD &= ~(motDir[i]);
-    }
-    quePos[i] = lenScale[i] * abs(curPos[i] - desPos[i]);
     curPos[i] = desPos[i];
   }
 
