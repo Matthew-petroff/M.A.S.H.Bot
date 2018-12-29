@@ -447,6 +447,7 @@ class MASHBot():
             if data == completionFlag: #0xFA
                 print('Arduino Power Shutdown Complete')
                 self.online = False
+                time.sleep(delayFrame)
                 break
             else:
                 time.sleep(delayFrame)
