@@ -364,6 +364,13 @@ class CommandLine(cmd.Cmd):
             print(level)
         print()
 
+    def do_listUtils(self, data):
+        '''List all utils loaded'''
+        print('=== UTILS ===')
+        for util in util_list:
+            print(util)
+        print()
+
     def do_playLevel(self, data):
         '''Play a single level from the level select screen'''
         if self.bot.online:
