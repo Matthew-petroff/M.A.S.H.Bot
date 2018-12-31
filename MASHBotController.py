@@ -401,7 +401,7 @@ class CommandLine(cmd.Cmd):
         if self.bot.online:
             if data == '':
                 print('No util selected')
-            elif data not in level_list:
+            elif data not in util_list:
                 print('Could not match util')
             else:
                 try:
