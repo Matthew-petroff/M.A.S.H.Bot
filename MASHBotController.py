@@ -376,6 +376,7 @@ class CommandLine(cmd.Cmd):
             print('Power Offline')
 
     def do_runUtil(self, data):
+        '''Run Utility Script'''
         if self.bot.online:
             if data == '':
                 print('No util selected')
