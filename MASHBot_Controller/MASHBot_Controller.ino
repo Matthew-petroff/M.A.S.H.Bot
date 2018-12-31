@@ -12,7 +12,7 @@ byte zBounds[] = {89, 79}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
 #define BASE_STEP_DELAY 25 // base time between steps (microseconds)
-#define MIN_STEP_DELAY 9   // minimum step delay
+#define MIN_STEP_DELAY 8   // minimum step delay
 #define RAMP_DIV 7         // reduce step delay by 1 microsecond every 2^n steps
 
 // PARAMETERS - Pinouts
