@@ -405,7 +405,7 @@ class CommandLine(cmd.Cmd):
                 print('Could not match util')
             else:
                 try:
-                    self.bot.sendBuffer((util_list[data], 'Running Util: {}'.format(data)))
+                    self.bot.sendBuffer((utils[data], 'Running Util: {}'.format(data)))
                 except KeyboardInterrupt:
                     pass
                 except TypeError:
