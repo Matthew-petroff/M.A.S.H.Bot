@@ -2,12 +2,13 @@
 
 // PARAMETERS - Calibrations
 const bool DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
-unsigned int lenScale[] = {185, 185}; // Steps per Pixel (X, Y)
+unsigned int lenScale[] = {190, 193}; // Steps per Pixel (X, Y) ***WARNING: DO NOT EXCEED 255, change movement to LONG if you need to***
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
+unsigned int endOffset[] = {2, 2};  // Endstop Offset
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
 bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
-byte startBounds[] = {102, 93}; // Start Button Servo Boundaries (OFF, ON)
-byte zBounds[] = {87, 79}; // Z Axis Servo Boundaries (OFF, ON)
+byte startBounds[] = {102, 91}; // Start Button Servo Boundaries (OFF, ON)
+byte zBounds[] = {89, 80}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
 #define BASE_STEP_DELAY 25 // base time between steps (microseconds)
@@ -60,8 +61,8 @@ void _INT_Homing(void) {
     PORTD |= (XSTEP | YSTEP);
     delayMicroseconds(BASE_STEP_DELAY);
   }
-  curPos[0] = endLoc[0];
-  curPos[1] = endLoc[1];
+  curPos[0] = endLoc[0] - endOffset[0];
+  curPos[1] = endLoc[1] - endOffset[1];
   DISABLE;
 }
 
@@ -84,6 +85,8 @@ void _DEBUG_Movement()
 {
   ENABLE;
   delay(5000);
+  stepperMovement(255, 192);
+  delay(5000);
   stepperMovement(0, 0);
   delay(100);
   DISABLE;
@@ -101,8 +104,8 @@ void PowerToggle()
 // FUNCTIONS - Stepper Movement Controller
 void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
 {
-  long unsigned int desPos[] = { xDesPos, yDesPos };
-  long unsigned int quePos[] = { 0, 0 };
+  unsigned int desPos[] = { xDesPos, yDesPos };
+  unsigned int quePos[] = { 0, 0 };
   unsigned int small, large;
   int delta = 0;
   byte step_delay = BASE_STEP_DELAY;
@@ -143,7 +146,7 @@ void stepperMovement(unsigned int xDesPos, unsigned int yDesPos)
   unsigned int qLarge = quePos[large] / lenScale[large]; // max would be 255
 
   delta = (2 * qSmall) - qLarge;
-  for (int i = 0, j = quePos[large]; j > 0; i++, j--)
+  for (unsigned int i = 0, j = quePos[large]; j > 0; i++, j--)
   {
     if (delta > 0)
     {
@@ -179,7 +182,7 @@ void moveCoordinates(byte x, byte y, byte z)
     }
   } else if (zPrev != z)
   {
-    zServ.write(zBounds[LOW]); // Z Axis Pushed: ON
+    zServ.write(zBounds[LOW]); // Z Axis Pushed: OFF
     zPrev = z; // Save Z State for Next Loop Iteration
     delay(100);
   }
@@ -270,7 +273,7 @@ void loop()
         }
         else // Parity Check Passed
         {
-          moveCoordinates(xCoord, yCoord, zState); // Move to Designated Position
+          moveCoordinates(xCoord, yCoord, constrain(zState, 0, 1)); // Move to Designated Position
           Serial.write(0xfa); // Send completion flag
           delay(10);
         }
