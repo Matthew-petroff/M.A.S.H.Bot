@@ -129,7 +129,6 @@ def readLevels(root):
     start_buffer = None
     credits_buffer = None
     levels = {}
-    global buffers
     level_list = []
     for x in os.listdir(root):
         path = os.path.join(root, x)
@@ -191,10 +190,25 @@ def processLevel(level_root):
     return (level_start, level_exit, level_polls)
 
 # Process input data
-readLevels(level_path)
-readUtils(util_path)
-sig_buffer = processGCode(sigfile)
-music_buffer = processGCode(musicfile)
+def loadInputData():
+    # Clear Existing Data
+    global start_buffer
+    global credits_buffer
+    global levels
+    global level_list
+    global utils
+    global util_list
+    start_buffer = None
+    credits_buffer = None
+    levels = {}
+    level_list = []
+    utils = {}
+    util_list = []
+    # Load New Data
+    readLevels(level_path)
+    readUtils(util_path)
+    sig_buffer = processGCode(sigfile)
+    music_buffer = processGCode(musicfile)
 
 if serialPort == None:
     try:
@@ -393,6 +407,9 @@ class CommandLine(cmd.Cmd):
         else:
             print('Power Offline')
 
+    def do_reloadInputData(self, data):
+        '''Reload Input Data from File'''
+        loadInputData()
 
     def do_playMusic(self, data):
         '''Play Music'''
@@ -517,6 +534,8 @@ class MASHBot():
                 continue
             else:
                 time.sleep(frameDelay)
+
+loadInputData()
 
 MBot = MASHBot(serialPort, serialBaud, serialTimeout, serialReset)
 MBot.initSerial()
