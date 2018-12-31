@@ -46,6 +46,7 @@ frameDelay = 1/60 # Time Per Frame
 
 # Script will look in this path for input data
 level_path = 'v5'
+util_path = 'utils'
 sigfile = 'sig.gcode'
 musicfile = 'music.gcode'
 
@@ -104,6 +105,21 @@ def processGCode(file):
                     frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
                     buffer.append(frame)
     return buffer
+
+def readUtils(root):
+    global utils
+    global util_list
+    utils = {}
+    util_list = []
+    for x in os.listdir(root):
+        path = os.path.join(root, x)
+        if os.path.isdir(path):
+            continue
+        util_list.append(path)
+        print('Found Util: {}'.format(x))
+    for util in util_list:
+        util_data = processTASFile(util)
+        utils[util] = util_data
 
 def readLevels(root):
     global start_buffer
@@ -176,6 +192,7 @@ def processLevel(level_root):
 
 # Process input data
 readLevels(level_path)
+readUtils(util_path)
 sig_buffer = processGCode(sigfile)
 music_buffer = processGCode(musicfile)
 
@@ -357,6 +374,24 @@ class CommandLine(cmd.Cmd):
             self.bot.sendBuffer((sig_buffer, 'TASBot\'s Signature'))
         else:
             print('Power Offline')
+
+    def do_runUtil(self, data):
+        if self.bot.online:
+            if data == '':
+                print('No util selected')
+            elif data not in level_list:
+                print('Could not match util')
+            else:
+                try:
+                    self.bot.sendBuffer((util_list[data], 'Running Util: {}'.format(data)))
+                except KeyboardInterrupt:
+                    pass
+                except TypeError:
+                    print(data)
+                    raise
+        else:
+            print('Power Offline')
+
 
     def do_playMusic(self, data):
         '''Play Music'''
