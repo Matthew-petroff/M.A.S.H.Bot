@@ -53,6 +53,15 @@ void _INT_Homing(void) {
   powServ.write(powBounds[LOW]); // Reset Power Servo to OFF
 
   ENABLE;
+
+  /*  Move the motors off the Endstop points.
+      This ensures axis location is garenteed at the
+      same point after Homing */
+  curPos[0] = endLoc[0];
+  curPos[1] = endLoc[1];
+  stepperMovement(endLoc[0] - 3 * endOffset[0], endLoc[1] - 3 * endOffset[1]);
+  delay(200);
+
   PORTD |= (XDIR | YDIR);
   while (PINB & (XEND | YEND)) {
     if (PINB & XEND) PORTD &= ~XSTEP;
