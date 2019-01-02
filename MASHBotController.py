@@ -309,7 +309,7 @@ class CommandLine(cmd.Cmd):
     def do_exit(self, data):
         '''Quit'''
         if self.bot.online:
-            self.bot.deInitPower()
+            self.bot.deInitPower(flag=killFlag)
         print('Shutting Down!')
         return True
 
@@ -499,9 +499,9 @@ class MASHBot():
                 time.sleep(delayFrame)
         return True
 
-    def deInitPower(self):
+    def deInitPower(self, flag=powerFlag):
         print('Sending Power Shutdown Command')
-        self.send(powerFlag) #0xFD
+        self.send(flag) #0xFD
         while True:
             data = self.recv(1)
             if data == completionFlag: #0xFA
