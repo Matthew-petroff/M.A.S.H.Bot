@@ -2,13 +2,13 @@
 
 // PARAMETERS - Calibrations
 const bool DEBUG_SERIAL = true; // Set DEBUG Mode for Serial Communications
-unsigned int lenScale[] = {190, 193}; // Steps per Pixel (X, Y) ***WARNING: DO NOT EXCEED 255, change movement to LONG if you need to***
+unsigned int lenScale[] = {191, 191}; // Steps per Pixel (X, Y) ***WARNING: DO NOT EXCEED 255, change movement to LONG if you need to***
 unsigned int endLoc[] = {255, 192}; // Endstop Locations (X, Y)
 unsigned int endOffset[] = {2, 2};  // Endstop Offset
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
 bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
 byte startBounds[] = {102, 91}; // Start Button Servo Boundaries (OFF, ON)
-byte zBounds[] = {89, 80}; // Z Axis Servo Boundaries (OFF, ON)
+byte zBounds[] = {89, 79}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
 #define BASE_STEP_DELAY 25 // base time between steps (microseconds)
@@ -91,6 +91,18 @@ void _DEBUG_Movement()
   delay(100);
   DISABLE;
 }
+
+// FUNCTIONS - DEBUG Axis Movement
+//void _DEBUG_Movement()
+//{
+//  ENABLE;
+//  delay(5000);
+//  stepperMovement(255, 192);
+//  delay(5000);
+//  stepperMovement(0, 0);
+//  delay(100);
+//  DISABLE;
+//}
 
 // FUNCTIONS - Toggle DS Power
 void PowerToggle()
