@@ -303,6 +303,8 @@ void loop()
         PowerToggle(); // Toggle System Power
         Serial.write(0xfa); // Send completion flag
 
+        _INT_Homing(); // Home Axis
+
         startFlag = false; // Terminate Serial Handshake
       }
       else if (infoByte == 0xde)
