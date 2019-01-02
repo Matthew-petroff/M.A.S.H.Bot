@@ -309,7 +309,8 @@ class CommandLine(cmd.Cmd):
     def do_exit(self, data):
         '''Quit'''
         if self.bot.online:
-            self.bot.deInitPower(flag=killFlag)
+            self.bot.deInitPower()
+        self.bot.deInitPower(flag=killFlag)
         print('Shutting Down!')
         return True
 
