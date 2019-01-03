@@ -29,6 +29,7 @@ pollFlag = b'\xf0'
 killFlag = b'\xfe'
 confirmationFlag = b'\xff'
 startbutton = b'\xde'
+homeFlag = b'\xfb'
 
 # Handshake Settings
 waitTime = 2 
@@ -348,6 +349,16 @@ class CommandLine(cmd.Cmd):
         else:
             print('Power Offline')
 
+    def do_home(self, data):
+        '''Send the homing command'''
+        if self.bot.online:
+            try:
+                self.bot.home()
+            except KeyboardInterrupt:
+                pass
+        else:
+            print('Power Offline')
+
     def do_playFullRun(self, data):
         '''Do a full run of the game with all levels'''
         if self.bot.online:
@@ -487,6 +498,17 @@ class MASHBot():
         if DEBUG: print('R', data)
         return data
 
+    def home(self):
+        print('Homing')
+        self.send(homeFlag)
+        while True:
+            data = self.recv(1)
+            if data != homeFlag:
+                time.sleep(frameDelay)
+            else:
+                print('Homing Complete')
+                break
+
     def initPower(self):
         print('Sending Power Init Command')
         self.send(powerFlag) #0xFD
@@ -519,6 +541,7 @@ class MASHBot():
         print('Sending buffer: {}'.format(name))
         state = None
         fcount = 0
+        self.home()
         for frame in buffer:
             print('level: {} frame: {} data: '.format(name, fcount), frame)
             fcount += 1
