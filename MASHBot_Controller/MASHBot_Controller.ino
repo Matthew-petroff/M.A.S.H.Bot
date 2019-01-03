@@ -316,6 +316,13 @@ void loop()
 
         startFlag = false; // Terminate Serial Handshake
       }
+      else if (infoByte == 0xfb)
+      {
+        _INT_Homing(); // Home Axis
+        delay(100);
+        ENABLE; // Power Off Motors
+        Serial.write(0xfb); // Send completion flag
+      }
       else if (infoByte == 0xde)
       {
         Serial.write(0xde); // Send completion flag
