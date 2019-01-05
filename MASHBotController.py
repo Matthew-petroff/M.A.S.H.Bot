@@ -101,8 +101,8 @@ def processGCode(file):
                     buffer.append(frame)
             if int(Op[0][1:]) == 1:
                 if Op[1][0] == 'X' and Op[2][0] == 'Y':
-                    x = clamp(int(Op[1][1:]), 0, 255)
-                    y = clamp(int(Op[2][1:]), 0, 192)
+                    x = 255-(clamp(int(Op[1][1:]), 0, 255))
+                    y = 192-(clamp(int(Op[2][1:]), 0, 192))
                     frame = inputStruct.pack(stylesFlag, x, x, y, y, z, z, completionFlag)
                     buffer.append(frame)
     return buffer
