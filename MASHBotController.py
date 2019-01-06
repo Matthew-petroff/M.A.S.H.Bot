@@ -199,6 +199,8 @@ def loadInputData():
     global level_list
     global utils
     global util_list
+    global sig_buffer
+    global music_buffer
     start_buffer = None
     credits_buffer = None
     levels = {}
