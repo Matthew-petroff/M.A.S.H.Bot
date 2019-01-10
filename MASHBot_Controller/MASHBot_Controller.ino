@@ -8,7 +8,7 @@ unsigned int endOffset[] = {2, 2};  // Endstop Offset
 bool homeDir[] = {HIGH, HIGH}; // Direction to Endstops (X, Y)
 bool posDir[] = {HIGH, HIGH}; // Direction to +Axis Movement (X, Y)
 byte startBounds[] = {102, 91}; // Start Button Servo Boundaries (OFF, ON)
-byte zBounds[] = {88, 78}; // Z Axis Servo Boundaries (OFF, ON)
+byte zBounds[] = {87, 77}; // Z Axis Servo Boundaries (OFF, ON)
 byte powBounds[] = {93, 102}; // Power Servo Boundaries (OFF, ON)
 
 #define BASE_STEP_DELAY 25 // base time between steps (microseconds)
